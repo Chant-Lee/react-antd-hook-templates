@@ -13,13 +13,23 @@ interface IProp {
 const MenuNav = (props: IProp) => {
   const { theme, routes } = props;
 
-  const [activePath, setActivePath] = useState<string[]>([]);
+  const [openKeys, setOpenKeys] = useState<string[]>([]);
+  const [currentKeys, setCurrentKeys] = useState<string[]>([]);
+
   const location = useLocation();
 
-  const handleChange = (info: any) => {
-    props.onChange && props.onChange(info.keyPath);
-    setActivePath(info.keyPath);
-  };
+  function handleOpenChange(keys: Array<string>): any {
+    if (keys.length === 0 || keys.length === 1) {
+      setOpenKeys(keys);
+      return;
+    }
+    const latestOpenKey = keys[keys.length - 1];
+    setOpenKeys([latestOpenKey]);
+  }
+
+  function handleClickMenu({ key }: any): any {
+    setCurrentKeys([key]);
+  }
 
   const defaultSelectedKeys = useMemo<string[]>(() => {
     if (!routes || !routes.length) return [];
@@ -27,10 +37,10 @@ const MenuNav = (props: IProp) => {
   }, [routes]);
 
   useEffect(() => {
-    const paths = location.pathname
-      .split('/')
-      .map((path: string) => `/${path}`);
-    setActivePath(paths);
+    const paths = location.pathname;
+    const openKey = paths.substr(0, paths.lastIndexOf('/'));
+    setCurrentKeys([paths]);
+    setOpenKeys([openKey]);
   }, [location]);
 
   function renderMenuItem({ path, icon, name }: MenuItem): any {
@@ -53,14 +63,15 @@ const MenuNav = (props: IProp) => {
       </SubMenu>
     );
   }
-
   return (
     <Menu
       theme={theme}
       mode="inline"
       defaultSelectedKeys={defaultSelectedKeys}
-      selectedKeys={activePath}
-      onClick={handleChange}
+      openKeys={openKeys}
+      selectedKeys={currentKeys}
+      onOpenChange={handleOpenChange as any}
+      onClick={handleClickMenu}
     >
       {routes.map((item: MenuItem) => {
         return item.subs && item.subs.length > 0
@@ -76,4 +87,5 @@ MenuNav.defaultProps = {
 };
 
 interface MenuItem extends IRoute {}
+
 export default withRouter(MenuNav);
